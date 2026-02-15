@@ -1,7 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
 import { theme } from '@/config/theme';
-import { Button } from './Button';
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,6 +12,29 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) {
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -23,30 +46,34 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: '16px',
       }}
     >
-      {/* Backdrop */}
+      {/* Backdrop with fade-in */}
       <div
         onClick={onClose}
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          animation: 'fadeIn 0.2s ease',
         }}
       />
       
-      {/* Modal content */}
+      {/* Modal content with slide-up animation */}
       <div
         style={{
           position: 'relative',
           backgroundColor: theme.colors.background.tertiary,
-          borderRadius: '8px',
+          borderRadius: '12px',
           border: `1px solid ${theme.colors.border}`,
           width: '100%',
           maxWidth: '500px',
           maxHeight: '90vh',
           overflow: 'auto',
+          boxShadow: '0 24px 48px rgba(0, 0, 0, 0.6)',
+          animation: 'slideUp 0.3s ease',
         }}
       >
         {/* Header */}
@@ -55,7 +82,7 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 20px',
+            padding: '20px 24px',
             borderBottom: `1px solid ${theme.colors.border}`,
           }}
         >
@@ -70,15 +97,19 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
               color: theme.colors.text.secondary,
               cursor: 'pointer',
               padding: '4px',
-              fontSize: '20px',
+              fontSize: '24px',
+              lineHeight: 1,
+              transition: 'color 150ms ease',
             }}
+            onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.text.primary}
+            onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.text.secondary}
           >
             ×
           </button>
         </div>
         
         {/* Body */}
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '24px' }}>
           {children}
         </div>
         
@@ -89,8 +120,10 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '12px',
-              padding: '16px 20px',
+              padding: '16px 24px',
               borderTop: `1px solid ${theme.colors.border}`,
+              backgroundColor: theme.colors.background.secondary,
+              borderRadius: '0 0 12px 12px',
             }}
           >
             {footer}

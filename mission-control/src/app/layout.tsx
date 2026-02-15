@@ -25,14 +25,33 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ backgroundColor: '#0a0a0a' }}
+        style={{ 
+          backgroundColor: '#0a0a0a',
+          color: '#ffffff',
+          minHeight: '100vh',
+          margin: 0,
+        }}
       >
-        <Sidebar />
-        <main style={{ marginLeft: '200px', padding: '24px', minHeight: '100vh' }}>
-          {children}
-        </main>
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
+          <Sidebar />
+          <main 
+            className="main-content"
+            style={{ 
+              flex: 1,
+              padding: '24px',
+              marginLeft: '200px',
+              minHeight: '100vh',
+              boxSizing: 'border-box',
+            }}
+          >
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

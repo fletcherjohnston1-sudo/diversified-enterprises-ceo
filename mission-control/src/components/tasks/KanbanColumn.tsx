@@ -1,5 +1,6 @@
 'use client';
 
+import { useDroppable } from '@dnd-kit/core';
 import { Task, Project } from '@/types';
 import { TaskCard } from './TaskCard';
 import { theme } from '@/config/theme';
@@ -10,24 +11,44 @@ interface KanbanColumnProps {
   tasks: Task[];
   projects: Project[];
   onTaskClick: (task: Task) => void;
+  isDragOver?: boolean;
+  activeTaskId?: number;
 }
 
-export function KanbanColumn({ title, status, tasks, projects, onTaskClick }: KanbanColumnProps) {
+export function KanbanColumn({ 
+  title, 
+  status, 
+  tasks, 
+  projects, 
+  onTaskClick,
+  isDragOver = false,
+  activeTaskId 
+}: KanbanColumnProps) {
+  // Make this column a droppable zone using its status as ID
+  const { setNodeRef } = useDroppable({
+    id: status,
+  });
+
   // Get project by ID
   const getProject = (projectId: number) => {
     return projects.find(p => p.id === projectId);
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: theme.colors.background.secondary,
-      borderRadius: '8px',
-      border: `1px solid ${theme.colors.border}`,
-      minHeight: '400px',
-      maxHeight: 'calc(100vh - 200px)',
-    }}>
+    <div
+      ref={setNodeRef}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: '8px',
+        border: `1px solid ${isDragOver ? theme.colors.accent : theme.colors.border}`,
+        minHeight: '400px',
+        maxHeight: 'calc(100vh - 200px)',
+        transition: 'border-color 150ms ease',
+        boxShadow: isDragOver ? `0 0 0 2px ${theme.colors.accent}40` : 'none',
+      }}
+    >
       {/* Column Header */}
       <div style={{
         display: 'flex',
@@ -80,8 +101,11 @@ export function KanbanColumn({ title, status, tasks, projects, onTaskClick }: Ka
             color: theme.colors.text.tertiary,
             fontSize: '13px',
             textAlign: 'center',
+            border: isDragOver ? `2px dashed ${theme.colors.accent}` : '2px dashed transparent',
+            borderRadius: '8px',
+            transition: 'border-color 150ms ease',
           }}>
-            No tasks yet
+            {isDragOver ? 'Drop here' : 'No tasks yet'}
           </div>
         ) : (
           // Task cards
@@ -91,6 +115,7 @@ export function KanbanColumn({ title, status, tasks, projects, onTaskClick }: Ka
               task={task}
               project={getProject(task.project_id)}
               onClick={() => onTaskClick(task)}
+              isDragging={activeTaskId === task.id}
             />
           ))
         )}

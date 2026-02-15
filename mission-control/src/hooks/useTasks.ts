@@ -11,6 +11,7 @@ interface UseTasksReturn {
   updateTask: (id: number, data: UpdateTaskInput) => Promise<Task | null>;
   deleteTask: (id: number) => Promise<boolean>;
   refresh: () => Promise<void>;
+  refreshTasks: () => Promise<void>;
 }
 
 export function useTasks(): UseTasksReturn {
@@ -116,5 +117,6 @@ export function useTasks(): UseTasksReturn {
     updateTask,
     deleteTask,
     refresh: fetchTasks,
+    refreshTasks: fetchTasks,
   };
 }

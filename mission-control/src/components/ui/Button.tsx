@@ -14,6 +14,7 @@ export function Button({
   size = 'md', 
   className, 
   children, 
+  disabled,
   ...props 
 }: ButtonProps) {
   const baseStyles = {
@@ -23,28 +24,28 @@ export function Button({
     fontWeight: '500',
     borderRadius: '6px',
     transition: 'all 150ms ease',
-    cursor: 'pointer',
+    cursor: disabled ? 'not-allowed' : 'pointer',
     border: 'none',
     outline: 'none',
   };
 
   const variants = {
     primary: {
-      backgroundColor: theme.colors.accent.primary,
-      color: theme.colors.text.primary,
+      backgroundColor: disabled ? theme.colors.background.card : theme.colors.accent.primary,
+      color: disabled ? theme.colors.text.tertiary : theme.colors.text.primary,
     },
     secondary: {
       backgroundColor: theme.colors.background.tertiary,
-      color: theme.colors.text.primary,
+      color: disabled ? theme.colors.text.tertiary : theme.colors.text.primary,
       border: `1px solid ${theme.colors.border}`,
     },
     danger: {
-      backgroundColor: theme.colors.status.error,
-      color: theme.colors.text.primary,
+      backgroundColor: disabled ? theme.colors.background.card : theme.colors.status.error,
+      color: disabled ? theme.colors.text.tertiary : theme.colors.text.primary,
     },
     ghost: {
       backgroundColor: 'transparent',
-      color: theme.colors.text.secondary,
+      color: disabled ? theme.colors.text.tertiary : theme.colors.text.secondary,
     },
   };
 
@@ -65,8 +66,11 @@ export function Button({
     <button
       className={cn(className)}
       style={{ ...baseStyles, ...variants[variant], ...sizes[size] }}
+      disabled={disabled}
       onMouseEnter={(e) => {
-        Object.assign(e.currentTarget.style, hoverStyles[variant]);
+        if (!disabled) {
+          Object.assign(e.currentTarget.style, hoverStyles[variant]);
+        }
       }}
       onMouseLeave={(e) => {
         Object.assign(e.currentTarget.style, variants[variant]);

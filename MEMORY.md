@@ -28,7 +28,7 @@
 ## Active Projects
 
 ### Mission Control Dashboard
-**Status:** Phase 1 in progress
+**Status:** Phase 1 complete ✅
 **Location:** `/home/clawd/.openclaw/workspace-ceo/mission-control/`
 **Purpose:** Modular web dashboard for managing OpenClaw interactions
 **URL:** `http://76.13.113.211:3000`
@@ -43,20 +43,22 @@
 - Kanban-style task management
 - Drag & drop between Backlog/In Progress/Done
 - Dark theme UI
+- Full CRUD with modal forms
+- Responsive design (mobile-ready)
 
 **Progress:**
-- ✅ Steps 1-7 complete (scaffold, database, API, UI components, layout)
-- ✅ Step 8 complete (hooks: useTasks, useProjects)
-- ✅ Step 9 complete (task components: KanbanBoard, KanbanColumn, TaskCard, TaskModal)
-- ✅ Step 10 complete (pages: /tasks page wired up)
-- 🔄 Remaining: Drag-and-drop implementation, final styling polish
+- ✅ Steps 1-12 complete
+- ✅ Drag-and-drop implemented (Feb 14, 2026)
+- ✅ Final polish complete (Feb 14, 2026)
 
 **Current State:**
 - App running at `http://76.13.113.211:3000`
-- API functional: `/api/tasks`, `/api/projects` returning data
-- Kanban UI renders with 3 columns (Backlog, In Progress, Done)
-- Create/Edit/Delete tasks working via modal
-- Drag-and-drop NOT yet implemented (using @dnd-kit/core)
+- Kanban board with 3 columns (Backlog, In Progress, Done)
+- Create/Edit/Delete tasks via modal ✅
+- Drag-and-drop between columns ✅
+- Status persisted to database on drop ✅
+- Loading skeletons, toast notifications, error handling ✅
+- Mobile-responsive with collapsible sidebar ✅
 
 ---
 
