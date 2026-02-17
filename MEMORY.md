@@ -62,6 +62,28 @@
 
 ---
 
+## Model Cost Notes
+- **Opus 4.5** — $15/$75 per 1M tokens. Chairman's choice for CEO work.
+- **MiniMax M2.5** — $0.30/$1.20 per 1M tokens. Good for routine coding, subagents.
+- **Qwen 3.5 Plus** — $0.40/$2.40 per 1M tokens. 1M context window.
+- Aliases configured: `/model MiniMax`, `/model Qwen`, `/model Sonnet`, etc.
+
+## Executive Team & Topics
+| Agent | Topic | threadId | Workspace |
+|-------|-------|----------|-----------|
+| CEO | CEO Office | 39 | workspace-ceo |
+| CTO | CTO | 67 | workspace-cto |
+| CRO | Research | 36 | workspace-research |
+| COO | Operations | 37 | workspace-coo |
+| CFO | Finance | 38 | workspace-cfo |
+
+**Telegram group:** `-1003884162218`
+
+### Agent Communication Protocol
+- All agents have "Telegram Messaging Protocol" in their AGENTS.md
+- Must use `threadId` parameter to send to specific topics
+- Response Protocol: Acknowledge in own topic, then send to requested topic
+
 ## Preferences
 
 ### Communication Style

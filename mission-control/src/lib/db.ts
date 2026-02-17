@@ -1,81 +1,52 @@
 import Database from 'better-sqlite3';
-import { readdirSync, existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import path from 'path';
+import fs from 'fs';
 
-const dbPath = join(process.cwd(), 'database', 'mission-control.db');
-const schemaPath = join(process.cwd(), 'database', 'schema.sql');
-const migrationsPath = join(process.cwd(), 'database', 'migrations');
+const dbPath = path.join(process.cwd(), 'database', 'mission-control.db');
+const schemaPath = path.join(process.cwd(), 'database', 'schema.sql');
+const migrationsDir = path.join(process.cwd(), 'database', 'migrations');
 
 // Ensure database directory exists
-import { mkdirSync } from 'fs';
-const dbDir = join(process.cwd(), 'database');
-if (!existsSync(dbDir)) {
-  mkdirSync(dbDir, { recursive: true });
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
 }
 
 const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
 
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
+// Initialize database if empty
+const tableCount = db.prepare("SELECT count(*) as count FROM sqlite_master WHERE type='table'").get() as { count: number };
 
-// Check if this is a fresh database
-const tablesExist = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'").get();
-
-// Initialize schema on first run
-if (!tablesExist && existsSync(schemaPath)) {
-  console.log('Initializing database from schema.sql...');
-  const schema = readFileSync(schemaPath, 'utf-8');
+if (tableCount.count === 0) {
+  console.log('Initializing database from schema...');
+  const schema = fs.readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
-  console.log('Database schema initialized.');
+  console.log('Database initialized.');
 }
 
-// Create migrations tracking table if it doesn't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS migrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-
-// Run pending migrations
-if (existsSync(migrationsPath)) {
-  const appliedMigrations = new Set(
-    (db.prepare('SELECT name FROM migrations').all() as { name: string }[])
-      .map((row) => row.name)
-  );
-
-  const migrationFiles = readdirSync(migrationsPath)
-    .filter((f) => f.endsWith('.sql'))
+// Run migrations
+if (fs.existsSync(migrationsDir)) {
+  const migrationFiles = fs.readdirSync(migrationsDir)
+    .filter(f => f.endsWith('.sql'))
     .sort();
 
   for (const file of migrationFiles) {
-    if (!appliedMigrations.has(file)) {
-      console.log(`Running migration: ${file}`);
-      const migration = readFileSync(join(migrationsPath, file), 'utf-8');
-      
-      try {
-        db.exec(migration);
-        db.prepare('INSERT INTO migrations (name) VALUES (?)').run(file);
-        console.log(`Migration ${file} applied successfully.`);
-      } catch (err: any) {
-        // Ignore "already exists" errors (re-runnable migrations)
-        if (!err.message.includes('duplicate column name') && 
-            !err.message.includes('already exists')) {
-          console.error(`Migration ${file} failed:`, err.message);
-          throw err;
-        }
-        // Still mark as applied even if columns already exist
-        db.prepare('INSERT OR IGNORE INTO migrations (name) VALUES (?)').run(file);
+    try {
+      const migration = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
+      db.exec(migration);
+      console.log(`Migration applied: ${file}`);
+    } catch (error: any) {
+      if (!error.message.includes('duplicate column name') && !error.message.includes('already exists')) {
+        console.error(`Migration failed: ${file}`, error);
       }
     }
   }
 }
 
-// Database API
-const database = {
+export const database = {
   tasks: {
-    findAll: (filters?: { status?: string; project_id?: number; source_conversation_id?: number }) => {
+    findAll: (filters?: { status?: string; project_id?: number; priority?: string }) => {
       let query = 'SELECT * FROM tasks';
       const conditions: string[] = [];
       const params: any[] = [];
@@ -88,9 +59,9 @@ const database = {
         conditions.push('project_id = ?');
         params.push(filters.project_id);
       }
-      if (filters?.source_conversation_id !== undefined) {
-        conditions.push('source_conversation_id = ?');
-        params.push(filters.source_conversation_id);
+      if (filters?.priority) {
+        conditions.push('priority = ?');
+        params.push(filters.priority);
       }
 
       if (conditions.length) {
@@ -98,174 +69,280 @@ const database = {
       }
       query += ' ORDER BY created_at DESC';
 
-      return db.prepare(query).all(...params) as any[];
+      return db.prepare(query).all(...params);
     },
 
     findById: (id: number) => {
-      return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as any;
+      return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
     },
 
-    create: (data: { title: string; description?: string | null; project_id: number; status: string; priority: string; source_conversation_id?: number | null }) => {
+    create: (data: any) => {
       const stmt = db.prepare(`
-        INSERT INTO tasks (title, description, project_id, status, priority, source_conversation_id)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO tasks (title, description, status, priority, project_id, due_date, conversation_id, auto_created)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       const result = stmt.run(
         data.title,
         data.description || null,
-        data.project_id,
-        data.status,
-        data.priority,
-        data.source_conversation_id || null
+        data.status || 'Backlog',
+        data.priority || 'medium',
+        data.project_id || null,
+        data.due_date || null,
+        data.conversation_id || null,
+        data.auto_created || 0
       );
       return database.tasks.findById(result.lastInsertRowid as number);
     },
 
-    update: (id: number, data: { title?: string; description?: string | null; project_id?: number; status?: string; priority?: string; source_conversation_id?: number | null }) => {
-      const updates: string[] = [];
+    update: (id: number, data: any) => {
+      const fields: string[] = [];
       const params: any[] = [];
 
       if (data.title !== undefined) {
-        updates.push('title = ?');
+        fields.push('title = ?');
         params.push(data.title);
       }
       if (data.description !== undefined) {
-        updates.push('description = ?');
+        fields.push('description = ?');
         params.push(data.description);
       }
-      if (data.project_id !== undefined) {
-        updates.push('project_id = ?');
-        params.push(data.project_id);
-      }
       if (data.status !== undefined) {
-        updates.push('status = ?');
+        fields.push('status = ?');
         params.push(data.status);
       }
       if (data.priority !== undefined) {
-        updates.push('priority = ?');
+        fields.push('priority = ?');
         params.push(data.priority);
       }
-      if (data.source_conversation_id !== undefined) {
-        updates.push('source_conversation_id = ?');
-        params.push(data.source_conversation_id);
+      if (data.project_id !== undefined) {
+        fields.push('project_id = ?');
+        params.push(data.project_id);
+      }
+      if (data.due_date !== undefined) {
+        fields.push('due_date = ?');
+        params.push(data.due_date);
       }
 
-      updates.push('updated_at = CURRENT_TIMESTAMP');
+      if (fields.length === 0) {
+        return database.tasks.findById(id);
+      }
+
+      fields.push('updated_at = CURRENT_TIMESTAMP');
       params.push(id);
 
-      db.prepare('UPDATE tasks SET ' + updates.join(', ') + ' WHERE id = ?').run(...params);
+      const query = `UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`;
+      db.prepare(query).run(...params);
       return database.tasks.findById(id);
     },
 
     delete: (id: number) => {
-      return db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
-    },
+      const stmt = db.prepare('DELETE FROM tasks WHERE id = ?');
+      stmt.run(id);
+      return { success: true };
+    }
   },
 
   projects: {
     findAll: () => {
-      return db.prepare('SELECT * FROM projects ORDER BY name').all() as any[];
+      return db.prepare('SELECT * FROM projects ORDER BY name').all();
     },
 
     findById: (id: number) => {
-      return db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as any;
+      return db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
     },
 
-    findByName: (name: string) => {
-      return db.prepare('SELECT * FROM projects WHERE name = ?').get(name) as any;
-    },
-
-    findByKeyword: (keyword: string) => {
-      const search = '%' + keyword.toLowerCase() + '%';
-      return db.prepare(
-        'SELECT * FROM projects WHERE keywords LIKE ? OR LOWER(name) LIKE ? ORDER BY name'
-      ).all(search, search) as any[];
-    },
-
-    create: (data: { name: string; color?: string; icon?: string; keywords?: string }) => {
+    create: (data: any) => {
       const stmt = db.prepare(`
-        INSERT INTO projects (name, color, icon, keywords)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO projects (name, color)
+        VALUES (?, ?)
       `);
       const result = stmt.run(
         data.name,
-        data.color || '#8B5CF6',
-        data.icon || null,
-        data.keywords || null
+        data.color || '#3B82F6'
       );
       return database.projects.findById(result.lastInsertRowid as number);
     },
 
-    updateKeywords: (id: number, keywords: string) => {
-      return db.prepare('UPDATE projects SET keywords = ? WHERE id = ?').run(keywords, id);
-    },
-  },
-
-  conversations: {
-    findAll: (filters?: { channel?: string; sender_id?: string; limit?: number }) => {
-      let query = 'SELECT * FROM conversations WHERE is_archived = 0';
-      const conditions: string[] = [];
+    update: (id: number, data: any) => {
+      const fields: string[] = [];
       const params: any[] = [];
 
-      if (filters?.channel) {
-        conditions.push('channel = ?');
-        params.push(filters.channel);
+      if (data.name !== undefined) {
+        fields.push('name = ?');
+        params.push(data.name);
       }
-      if (filters?.sender_id) {
-        conditions.push('sender_id = ?');
-        params.push(filters.sender_id);
+      if (data.color !== undefined) {
+        fields.push('color = ?');
+        params.push(data.color);
       }
-
-      if (conditions.length) {
-        query += ' AND ' + conditions.join(' AND ');
-      }
-      query += ' ORDER BY timestamp DESC';
-
-      if (filters?.limit) {
-        query += ' LIMIT ?';
-        params.push(filters.limit);
+      if (data.description !== undefined) {
+        fields.push('description = ?');
+        params.push(data.description);
       }
 
-      return db.prepare(query).all(...params) as any[];
-    },
+      if (fields.length === 0) {
+        return database.projects.findById(id);
+      }
 
-    findById: (id: number) => {
-      return db.prepare('SELECT * FROM conversations WHERE id = ?').get(id) as any;
-    },
-
-    findByMessageId: (messageId: string) => {
-      return db.prepare('SELECT * FROM conversations WHERE message_id = ?').get(messageId) as any;
-    },
-
-    create: (data: { message_id: string; channel: string; sender_id?: string | null; sender_name?: string | null; content: string; timestamp: string; metadata?: string | null }) => {
-      const stmt = db.prepare(`
-        INSERT INTO conversations (message_id, channel, sender_id, sender_name, content, timestamp, metadata)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-      const result = stmt.run(
-        data.message_id,
-        data.channel,
-        data.sender_id || null,
-        data.sender_name || null,
-        data.content,
-        data.timestamp,
-        data.metadata || null
-      );
-      return database.conversations.findById(result.lastInsertRowid as number);
-    },
-
-    archive: (id: number) => {
-      return db.prepare('UPDATE conversations SET is_archived = 1 WHERE id = ?').run(id);
+      params.push(id);
+      const query = `UPDATE projects SET ${fields.join(', ')} WHERE id = ?`;
+      db.prepare(query).run(...params);
+      return database.projects.findById(id);
     },
 
     delete: (id: number) => {
-      return db.prepare('DELETE FROM conversations WHERE id = ?').run(id);
-    },
+      // Orphan tasks and conversations (set project_id to null)
+      db.prepare('UPDATE tasks SET project_id = NULL WHERE project_id = ?').run(id);
+      db.prepare('UPDATE conversations SET project_id = NULL WHERE project_id = ?').run(id);
+      // Delete project
+      db.prepare('DELETE FROM projects WHERE id = ?').run(id);
+      return { success: true };
+    }
   },
 
-  // Direct database access for advanced queries
-  raw: db,
+  conversations: {
+    findAll: (filters?: { project_id?: number; limit?: number }) => {
+      let query = 'SELECT * FROM conversations';
+      const conditions: string[] = [];
+      const params: any[] = [];
+
+      if (filters?.project_id) {
+        conditions.push('project_id = ?');
+        params.push(filters.project_id);
+      }
+
+      if (conditions.length) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+      query += ' ORDER BY created_at DESC';
+      query += ` LIMIT ${filters?.limit || 100}`;
+
+      return db.prepare(query).all(...params);
+    },
+
+    findById: (id: number) => {
+      return db.prepare('SELECT * FROM conversations WHERE id = ?').get(id);
+    },
+
+    create: (data: any) => {
+      const stmt = db.prepare(`
+        INSERT INTO conversations (message_text, role, project_id, metadata)
+        VALUES (?, ?, ?, ?)
+      `);
+      const result = stmt.run(
+        data.message_text,
+        data.role,
+        data.project_id || null,
+        data.metadata || null
+      );
+      return database.conversations.findById(result.lastInsertRowid as number);
+    }
+  },
+
+  notes: {
+    findAll: (filters?: { project_id?: number }) => {
+      let query = 'SELECT * FROM notes';
+      const params: any[] = [];
+
+      if (filters?.project_id) {
+        query += ' WHERE project_id = ?';
+        params.push(filters.project_id);
+      }
+      query += ' ORDER BY updated_at DESC';
+
+      return db.prepare(query).all(...params);
+    },
+
+    findById: (id: number) => {
+      return db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
+    },
+
+    create: (data: any) => {
+      const stmt = db.prepare(`
+        INSERT INTO notes (title, content, project_id)
+        VALUES (?, ?, ?)
+      `);
+      const result = stmt.run(
+        data.title,
+        data.content || null,
+        data.project_id || null
+      );
+      return database.notes.findById(result.lastInsertRowid as number);
+    },
+
+    update: (id: number, data: any) => {
+      const fields: string[] = [];
+      const params: any[] = [];
+
+      if (data.title !== undefined) {
+        fields.push('title = ?');
+        params.push(data.title);
+      }
+      if (data.content !== undefined) {
+        fields.push('content = ?');
+        params.push(data.content);
+      }
+      if (data.project_id !== undefined) {
+        fields.push('project_id = ?');
+        params.push(data.project_id);
+      }
+
+      if (fields.length === 0) {
+        return database.notes.findById(id);
+      }
+
+      fields.push('updated_at = CURRENT_TIMESTAMP');
+      params.push(id);
+
+      const query = `UPDATE notes SET ${fields.join(', ')} WHERE id = ?`;
+      db.prepare(query).run(...params);
+      return database.notes.findById(id);
+    },
+
+    delete: (id: number) => {
+      db.prepare('DELETE FROM notes WHERE id = ?').run(id);
+      return { success: true };
+    }
+  },
+
+  files: {
+    findAll: (filters?: { project_id?: number }) => {
+      let query = 'SELECT * FROM files';
+      const params: any[] = [];
+
+      if (filters?.project_id) {
+        query += ' WHERE project_id = ?';
+        params.push(filters.project_id);
+      }
+      query += ' ORDER BY created_at DESC';
+
+      return db.prepare(query).all(...params);
+    },
+
+    findById: (id: number) => {
+      return db.prepare('SELECT * FROM files WHERE id = ?').get(id);
+    },
+
+    create: (data: any) => {
+      const stmt = db.prepare(`
+        INSERT INTO files (filename, original_name, mime_type, size, project_id)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      const result = stmt.run(
+        data.filename,
+        data.original_name,
+        data.mime_type || null,
+        data.size || null,
+        data.project_id || null
+      );
+      return database.files.findById(result.lastInsertRowid as number);
+    },
+
+    delete: (id: number) => {
+      db.prepare('DELETE FROM files WHERE id = ?').run(id);
+      return { success: true };
+    }
+  }
 };
 
-export { database };
-export default database;
+export default db;

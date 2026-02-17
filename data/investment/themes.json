@@ -1,0 +1,61 @@
+{
+  "last_updated": "2026-02-16",
+  "themes": {
+    "ai_infrastructure": {
+      "display_name": "AI Infrastructure (Chips, Data Centers, Cooling)",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "robotics_humanoids": {
+      "display_name": "Robotics & Humanoid Robots",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "energy_transition": {
+      "display_name": "Energy Transition (Nuclear, Fusion, Grid)",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "longevity_biotech": {
+      "display_name": "Longevity & Biotech",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "blockchain_infrastructure": {
+      "display_name": "Blockchain Infrastructure (Toll Roads, Power, Banks)",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "memory_semiconductors": {
+      "display_name": "Memory Semiconductors (DRAM, HBM)",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "autonomous_vehicles": {
+      "display_name": "Autonomous Vehicles & Robotaxis",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    },
+    "ai_software_agents": {
+      "display_name": "AI Software & Autonomous Agents",
+      "score": 0,
+      "mentions": [],
+      "tier": "watch",
+      "notes": ""
+    }
+  }
+}
