@@ -197,7 +197,7 @@ export function KanbanBoard() {
     }
   };
 
-  // Handle delete
+  // Handle delete from modal
   const handleDelete = async (): Promise<boolean> => {
     if (!selectedTask) return false;
     try {
@@ -213,6 +213,26 @@ export function KanbanBoard() {
       showToast('Network error - please try again', 'error');
       return false;
     }
+  };
+
+  // Handle delete from card button
+  const handleDeleteFromCard = async (taskId: number) => {
+    try {
+      const result = await deleteTask(taskId);
+      if (result) {
+        showToast('Task deleted', 'success');
+      } else {
+        showToast('Failed to delete task', 'error');
+      }
+    } catch {
+      showToast('Network error - please try again', 'error');
+    }
+  };
+
+  // Handle edit from card button
+  const handleEditFromCard = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
   };
 
   // Drag start handler
@@ -339,6 +359,8 @@ export function KanbanBoard() {
             tasks={backlogTasks}
             projects={projects}
             onTaskClick={handleEditTask}
+            onEditTask={handleEditFromCard}
+            onDeleteTask={handleDeleteFromCard}
             isDragOver={dragOverStatus === 'Backlog'}
             activeTaskId={activeTask?.id}
           />
@@ -348,6 +370,8 @@ export function KanbanBoard() {
             tasks={inProgressTasks}
             projects={projects}
             onTaskClick={handleEditTask}
+            onEditTask={handleEditFromCard}
+            onDeleteTask={handleDeleteFromCard}
             isDragOver={dragOverStatus === 'In Progress'}
             activeTaskId={activeTask?.id}
           />
@@ -357,6 +381,8 @@ export function KanbanBoard() {
             tasks={doneTasks}
             projects={projects}
             onTaskClick={handleEditTask}
+            onEditTask={handleEditFromCard}
+            onDeleteTask={handleDeleteFromCard}
             isDragOver={dragOverStatus === 'Done'}
             activeTaskId={activeTask?.id}
           />

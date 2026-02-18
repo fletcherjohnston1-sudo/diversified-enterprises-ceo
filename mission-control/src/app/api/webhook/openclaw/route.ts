@@ -17,20 +17,44 @@ function detectPriority(message: string): 'high' | 'medium' | 'low' {
 }
 
 function extractTaskTitle(message: string): string | null {
-  const keywords = ['add', 'create', 'make', 'build', 'setup', 'fix', 'update', 'task', 'todo', 'remind'];
+  // Only create tasks for EXPLICIT commands
+  const explicitKeywords = [
+    'add task',
+    'create task', 
+    'new task',
+    'todo:',
+    'task:',
+    'remind me to',
+    'reminder:',
+    'add to task',
+    'create a task',
+    'make a task',
+    'add to do',
+    'add todo'
+  ];
+  
   const lower = message.toLowerCase();
   
-  for (const keyword of keywords) {
+  for (const keyword of explicitKeywords) {
     if (lower.includes(keyword)) {
-      const afterKeyword = message.substring(lower.indexOf(keyword) + keyword.length).trim();
+      const index = lower.indexOf(keyword);
+      const afterKeyword = message.substring(index + keyword.length).trim();
       let title = afterKeyword.replace(/^(a |the |to |for )/i, '');
+      
+      // Stop at common sentence endings
+      const sentenceEnd = title.search(/[.!?\n]/);
+      if (sentenceEnd > 10) {
+        title = title.substring(0, sentenceEnd).trim();
+      }
       
       const projectMatch = title.match(/to (mission control|moto|openclaw|personal)/i);
       if (projectMatch) {
         title = title.substring(0, projectMatch.index).trim();
       }
       
-      return title.substring(0, 200);
+      if (title.length > 3) {
+        return title.substring(0, 200);
+      }
     }
   }
   

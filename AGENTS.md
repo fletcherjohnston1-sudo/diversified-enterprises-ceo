@@ -125,6 +125,17 @@ Skills provide your tools. When you need one, check its `SKILL.md`. Keep local n
 - **Discord links:** Wrap multiple links in `<>` to suppress embeds: `<https://example.com>`
 - **WhatsApp:** No headers — use **bold** or CAPS for emphasis
 
+## Agent Communication Protocol
+
+All agents communicate via the Telegram group. Use **agent names with @** — never topic numbers.
+
+**Correct:** "Report to @CEO", "Notify @CTO", "Ask @CFO"
+**Wrong:** "Report to topic 39", "Send to topic 38"
+
+When another agent needs to respond:
+1. Acknowledge in your own topic
+2. Send the response to the requested topic using @agent name
+
 ## 💓 Heartbeats - Be Proactive!
 
 When you receive a heartbeat poll (message matches the configured heartbeat prompt), don't just reply `HEARTBEAT_OK` every time. Use heartbeats productively!

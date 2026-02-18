@@ -11,6 +11,8 @@ interface KanbanColumnProps {
   tasks: Task[];
   projects: Project[];
   onTaskClick: (task: Task) => void;
+  onEditTask?: (task: Task) => void;
+  onDeleteTask?: (taskId: number) => void;
   isDragOver?: boolean;
   activeTaskId?: number;
 }
@@ -21,6 +23,8 @@ export function KanbanColumn({
   tasks, 
   projects, 
   onTaskClick,
+  onEditTask,
+  onDeleteTask,
   isDragOver = false,
   activeTaskId 
 }: KanbanColumnProps) {
@@ -115,6 +119,8 @@ export function KanbanColumn({
               task={task}
               project={getProject(task.project_id)}
               onClick={() => onTaskClick(task)}
+              onEdit={onEditTask ? (t) => onEditTask(t) : undefined}
+              onDelete={onDeleteTask ? (id) => onDeleteTask(id) : undefined}
               isDragging={activeTaskId === task.id}
             />
           ))

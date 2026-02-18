@@ -69,20 +69,22 @@
 - Aliases configured: `/model MiniMax`, `/model Qwen`, `/model Sonnet`, etc.
 
 ## Executive Team & Topics
-| Agent | Topic | threadId | Workspace |
-|-------|-------|----------|-----------|
-| CEO | CEO Office | 39 | workspace-ceo |
-| CTO | CTO | 67 | workspace-cto |
-| CRO | Research | 36 | workspace-research |
-| COO | Operations | 37 | workspace-coo |
-| CFO | Finance | 38 | workspace-cfo |
+| Agent | Topic | threadId | Workspace | Model |
+|-------|-------|----------|-----------|-------|
+| CEO | CEO Office | 39 | workspace-ceo | Opus 4.5 |
+| CTO | CTO | 67 | workspace-cto | MiniMax M2.5 |
+| CRO | Research | 36 | workspace-research | MiniMax M2.5 |
+| COO | Operations | 37 | workspace-coo | MiniMax M2.5 |
+| CFO | Finance | 38 | workspace-cfo | MiniMax M2.5 |
+| Coach | Coach | 746 | workspace-coach | Sonnet 4.5 |
 
 **Telegram group:** `-1003884162218`
 
 ### Agent Communication Protocol
 - All agents have "Telegram Messaging Protocol" in their AGENTS.md
-- Must use `threadId` parameter to send to specific topics
+- Must use **@agent name** (not topic numbers) to send to specific topics
 - Response Protocol: Acknowledge in own topic, then send to requested topic
+- **Naming convention:** Always refer to agents by @name (e.g. @CEO, @CTO, @CFO, @COO, @CRO, @Coach) — never by topic number
 
 ## Preferences
 

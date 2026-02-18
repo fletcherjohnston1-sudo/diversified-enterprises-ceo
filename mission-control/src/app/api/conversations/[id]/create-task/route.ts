@@ -16,7 +16,7 @@ export async function POST(
       );
     }
 
-    const conversation = database.conversations.findById(conversationId);
+    const conversation = database.conversations.findById(conversationId) as { project_id: number } | undefined;
 
     if (!conversation) {
       return NextResponse.json(

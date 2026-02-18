@@ -5,15 +5,18 @@ import { CSS } from '@dnd-kit/utilities';
 import { Task, Project } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { theme } from '@/config/theme';
+import { Pencil, Trash2 } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
   project?: Project;
   onClick: () => void;
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: number) => void;
   isDragging?: boolean;
 }
 
-export function TaskCard({ task, project, onClick, isDragging = false }: TaskCardProps) {
+export function TaskCard({ task, project, onClick, onEdit, onDelete, isDragging = false }: TaskCardProps) {
   // Make this card draggable with id "task-{id}"
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `task-${task.id}`,
@@ -92,14 +95,84 @@ export function TaskCard({ task, project, onClick, isDragging = false }: TaskCar
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {/* Title */}
+        {/* Title row with action buttons */}
         <div style={{ 
-          fontSize: '14px', 
-          fontWeight: '600', 
-          color: theme.colors.text.primary,
-          lineHeight: 1.3,
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          justifyContent: 'space-between',
+          gap: '8px',
         }}>
-          {task.title}
+          <div style={{ 
+            fontSize: '14px', 
+            fontWeight: '600', 
+            color: theme.colors.text.primary,
+            lineHeight: 1.3,
+            flex: 1,
+          }}>
+            {task.title}
+          </div>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(task);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: theme.colors.text.tertiary,
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.colors.background.secondary;
+                  e.currentTarget.style.color = theme.colors.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.text.tertiary;
+                }}
+                title="Edit task"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(task.id);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: theme.colors.text.tertiary,
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fee2e2';
+                  e.currentTarget.style.color = '#dc2626';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.text.tertiary;
+                }}
+                title="Delete task"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Description (truncated) */}
