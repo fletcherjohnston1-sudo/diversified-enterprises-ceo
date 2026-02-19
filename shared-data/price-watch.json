@@ -1,0 +1,18 @@
+{
+  "mac_mini_m4_16gb_512gb": {
+    "target_price": 690,
+    "product_name": "2024 Mac mini M4 with 10-core CPU, 16GB RAM, 512GB SSD",
+    "checks": [
+      {
+        "date": "2026-02-18",
+        "time": "18:09 UTC",
+        "price": 743.00,
+        "list_price": 799.00,
+        "url": "https://www.amazon.com/Apple-2024-Desktop-Computer-10%E2%80%91core/dp/B0DLBX4B1K",
+        "status": "above_target",
+        "rating": "4.8/5 (2597 ratings)",
+        "badge": "Amazon's Choice - Overall Pick"
+      }
+    ]
+  }
+}

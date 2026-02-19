@@ -71,12 +71,12 @@
 ## Executive Team & Topics
 | Agent | Topic | threadId | Workspace | Model |
 |-------|-------|----------|-----------|-------|
-| CEO | CEO Office | 39 | workspace-ceo | Opus 4.5 |
+| CEO | CEO Office | 39 | workspace-ceo | Sonnet 4.6 |
 | CTO | CTO | 67 | workspace-cto | MiniMax M2.5 |
 | CRO | Research | 36 | workspace-research | MiniMax M2.5 |
 | COO | Operations | 37 | workspace-coo | MiniMax M2.5 |
 | CFO | Finance | 38 | workspace-cfo | MiniMax M2.5 |
-| Coach | Coach | 746 | workspace-coach | Sonnet 4.5 |
+| Coach | Coach | 746 | workspace-coach | MiniMax M2.5 |
 
 **Telegram group:** `-1003884162218`
 
@@ -92,3 +92,8 @@
 - Direct, concise, no corporate jargon
 - Lead with decision/action needed
 - When escalating: Situation → Options → Recommendation → Risk
+
+### Alert Routing
+- Price watch alerts → route through @CRO (not CEO directly)
+- Sync/operational summaries → CEO can summarize only when noteworthy
+- Routine background task completions → NO_REPLY unless actionable

@@ -3,6 +3,7 @@
 **Name:** Fletcher Johnston
 **Role:** Chairman of the Board, Diversified Enterprises
 **Authority:** Final decision-maker on all major matters
+**Timezone:** EST (Eastern Standard Time)
 
 ## Working Style
 - Wants concise, actionable updates

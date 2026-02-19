@@ -2,6 +2,7 @@ export const navigationItems = [
   { id: 'projects', label: 'Projects', icon: 'Folder', href: '/projects', enabled: true },
   { id: 'tasks', label: 'Tasks', icon: 'CheckSquare', href: '/tasks', enabled: true },
   { id: 'conversations', label: 'Conversations', icon: 'MessageSquare', href: '/conversations', enabled: true },
+  { id: 'health', label: 'Health', icon: 'Heart', href: '/health', enabled: true },
   { id: 'finance', label: 'Finance', icon: 'DollarSign', href: '/finance', enabled: true },
   { id: 'content', label: 'Content', icon: 'FileText', href: '/content', enabled: false },
   { id: 'approvals', label: 'Approvals', icon: 'CheckCircle', href: '/approvals', enabled: false },
