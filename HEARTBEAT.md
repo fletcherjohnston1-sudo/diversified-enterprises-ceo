@@ -6,4 +6,4 @@
 
 ## Periodic Checks
 
-1. **Context Window Monitor** — Run `/status` via session_status tool. If context >75%, notify Chairman. Current: 54% (108k/200k).
+_(None — heartbeat is handled by COO. COO reports HEARTBEAT_OK directly to Chairman.)_

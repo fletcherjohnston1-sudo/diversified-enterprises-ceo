@@ -71,6 +71,7 @@ export default function ProjectDetailPage() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskForm, setTaskForm] = useState({ title: '', description: '', status: 'Backlog', priority: 'medium' });
   const [savingTask, setSavingTask] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Add note modal
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -199,6 +200,34 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleUpdateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskForm.title.trim() || !editingTask) return;
+
+    setSavingTask(true);
+    try {
+      const response = await fetch(`/api/tasks/${editingTask.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskForm)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setTasks(tasks.map(t => t.id === editingTask.id ? data.data : t));
+        setIsTaskModalOpen(false);
+        setEditingTask(null);
+        setTaskForm({ title: '', description: '', status: 'Backlog', priority: 'medium' });
+      } else {
+        setError(data.error);
+      }
+    } catch (err) {
+      setError('Failed to update task');
+    } finally {
+      setSavingTask(false);
+    }
+  };
+
   const handleSaveNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!noteForm.title.trim()) return;
@@ -245,6 +274,18 @@ export default function ProjectDetailPage() {
       }
     } catch (err) {
       setError('Failed to delete note');
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    if (!confirm('Delete this task?')) return;
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      if (response.ok) {
+        setTasks(tasks.filter(t => t.id !== taskId));
+      }
+    } catch (err) {
+      setError('Failed to delete task');
     }
   };
 
@@ -347,35 +388,32 @@ export default function ProjectDetailPage() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/projects" className="text-gray-500 hover:text-gray-700">
+        <Link href="/projects" className="text-gray-400 hover:text-gray-700">
           Projects
         </Link>
         <span className="text-gray-400">/</span>
         <div className="w-4 h-4 rounded-full" style={{ backgroundColor: project.color }} />
-        <h1 className="text-2xl font-bold">{project.name}</h1>
+        <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
+          {project.name}
+          <button onClick={() => setIsEditModalOpen(true)} className="text-sm text-gray-400 hover:text-blue-400" title="Edit project">
+            ✏️
+          </button>
+          <button onClick={handleDeleteProject} disabled={deleting} className="text-sm text-gray-400 hover:text-red-400" title="Delete project">
+            🗑️
+          </button>
+        </h1>
       </div>
 
       {error && (
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>
       )}
 
-      {/* Project Info */}
-      <div className="bg-white border rounded-lg p-4 mb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            {project.description && <p className="text-gray-600 mb-2">{project.description}</p>}
-            <p className="text-xs text-gray-500">Created {new Date(project.created_at).toLocaleString('en-US', { timeZone: 'America/New_York' })}</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setIsEditModalOpen(true)} className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded">
-              Edit
-            </button>
-            <button onClick={handleDeleteProject} disabled={deleting} className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded disabled:opacity-50">
-              {deleting ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
+      {/* Project Info - Description */}
+      {project.description && (
+        <div className="bg-gray-800 border rounded-lg p-4 mb-6 style={{ backgroundColor: '#1f2937' }}">
+          <p className="text-gray-300">{project.description}</p>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b mb-4">
@@ -387,7 +425,7 @@ export default function ProjectDetailPage() {
               className={`pb-2 px-1 text-sm font-medium border-b-2 ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-400 hover:text-gray-700'
               }`}
             >
               {tab.label} ({tab.count})
@@ -405,25 +443,33 @@ export default function ProjectDetailPage() {
             </button>
           </div>
           {tasks.length === 0 ? (
-            <div className="text-gray-500 text-sm">No tasks in this project</div>
+            <div className="text-gray-400 text-sm">No tasks in this project</div>
           ) : (
             <div className="space-y-2">
               {tasks.map(task => (
-                <div key={task.id} className="border rounded-lg p-3 bg-white">
+                <div key={task.id} className="border border-gray-600 rounded-lg p-3 bg-gray-800">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{task.title}</h3>
-                      {task.description && <p className="text-sm text-gray-600 mt-1">{task.description}</p>}
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-100">{task.title}</h3>
+                      {task.description && <p className="text-sm text-gray-300 mt-1">{task.description}</p>}
                       <div className="flex gap-2 mt-2">
                         <span className={`text-xs px-2 py-0.5 rounded ${
                           task.status === 'Done' ? 'bg-green-100 text-green-800' :
                           task.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>{task.status}</span>
-                        <span className="text-xs text-gray-500">{task.priority}</span>
+                        <span className="text-xs text-gray-400">{task.priority}</span>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400">{new Date(task.created_at).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{new Date(task.created_at).toLocaleDateString()}</span>
+                      <button onClick={() => { setEditingTask(task); setTaskForm({ title: task.title, description: task.description || '', status: task.status, priority: task.priority }); setIsTaskModalOpen(true); }} className="p-1 text-gray-400 hover:text-blue-600" title="Edit task">
+                        ✏️
+                      </button>
+                      <button onClick={() => handleDeleteTask(task.id)} className="p-1 text-gray-400 hover:text-red-600" title="Delete task">
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -440,15 +486,24 @@ export default function ProjectDetailPage() {
             </button>
           </div>
           {notes.length === 0 ? (
-            <div className="text-gray-500 text-sm">No notes in this project</div>
+            <div className="text-gray-400 text-sm">No notes in this project</div>
           ) : (
-            <div className="space-y-2">
+            <>
+              {/* Date created as first note */}
+              <div className="border border-blue-200 rounded-lg p-3 bg-blue-50 mb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium text-blue-900">📅 Project Created</h3>
+                    <p className="text-sm text-blue-700 mt-1">{new Date(project.created_at).toLocaleString('en-US', { timeZone: 'America/New_York' })}</p>
+                  </div>
+                </div>
+              </div>
               {notes.map(note => (
-                <div key={note.id} className="border rounded-lg p-3 bg-white">
+                <div key={note.id} className="border border-gray-600 rounded-lg p-3 bg-gray-800">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{note.title}</h3>
-                      {note.content && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{note.content}</p>}
+                      <h3 className="font-medium text-gray-100">{note.title}</h3>
+                      {note.content && <p className="text-sm text-gray-300 mt-1 whitespace-pre-wrap">{note.content}</p>}
                       <p className="text-xs text-gray-400 mt-2">Updated {new Date(note.updated_at).toLocaleString('en-US', { timeZone: 'America/New_York' })}</p>
                     </div>
                     <div className="flex gap-1 ml-2">
@@ -462,7 +517,7 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </>
           )}
         </div>
       )}
@@ -476,14 +531,14 @@ export default function ProjectDetailPage() {
             </label>
           </div>
           {files.length === 0 ? (
-            <div className="text-gray-500 text-sm">No files in this project</div>
+            <div className="text-gray-400 text-sm">No files in this project</div>
           ) : (
             <div className="space-y-2">
               {files.map(file => (
-                <div key={file.id} className="border rounded-lg p-3 bg-white flex justify-between items-center">
+                <div key={file.id} className="border border-gray-600 rounded-lg p-3 bg-gray-800 flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium text-gray-900">{file.original_name}</h3>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)} • {new Date(file.created_at).toLocaleDateString()}</p>
+                    <h3 className="font-medium text-gray-100">{file.original_name}</h3>
+                    <p className="text-xs text-gray-400">{formatFileSize(file.size)} • {new Date(file.created_at).toLocaleDateString()}</p>
                   </div>
                   <button onClick={() => handleDeleteFile(file.id)} className="p-1 text-gray-400 hover:text-red-600">
                     🗑️
@@ -503,11 +558,11 @@ export default function ProjectDetailPage() {
             </button>
           </div>
           {conversations.length === 0 ? (
-            <div className="text-gray-500 text-sm">No conversations in this project</div>
+            <div className="text-gray-400 text-sm">No conversations in this project</div>
           ) : (
             <div className="space-y-2">
               {conversations.map(conv => (
-                <div key={conv.id} className="border rounded-lg p-3 bg-white">
+                <div key={conv.id} className="border border-gray-600 rounded-lg p-3 bg-gray-800">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded">{conv.role}</span>
@@ -525,23 +580,23 @@ export default function ProjectDetailPage() {
       {/* Edit Project Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-bold mb-4">Edit Project</h2>
             <form onSubmit={handleUpdateProject}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                <input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" required />
+                <input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" required />
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" rows={3} />
+                <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" rows={3} />
               </div>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
                 <input type="color" value={editForm.color} onChange={e => setEditForm({ ...editForm, color: e.target.value })} className="w-16 h-10 border rounded cursor-pointer" />
               </div>
               <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-gray-600">Cancel</button>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-gray-300">Cancel</button>
                 <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
                   {saving ? 'Saving...' : 'Save'}
                 </button>
@@ -554,21 +609,21 @@ export default function ProjectDetailPage() {
       {/* Add Task Modal */}
       {isTaskModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">Add Task</h2>
-            <form onSubmit={handleAddTask}>
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold mb-4">{editingTask ? 'Edit Task' : 'Add Task'}</h2>
+            <form onSubmit={editingTask ? handleUpdateTask : handleAddTask}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                <input type="text" value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" required />
+                <input type="text" value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" required />
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea value={taskForm.description} onChange={e => setTaskForm({ ...taskForm, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" rows={3} />
+                <textarea value={taskForm.description} onChange={e => setTaskForm({ ...taskForm, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" rows={3} />
               </div>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select value={taskForm.status} onChange={e => setTaskForm({ ...taskForm, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900">
+                  <select value={taskForm.status} onChange={e => setTaskForm({ ...taskForm, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100">
                     <option value="Backlog">Backlog</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Done">Done</option>
@@ -576,7 +631,7 @@ export default function ProjectDetailPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900">
+                  <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
@@ -584,9 +639,9 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
               <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setIsTaskModalOpen(false)} className="px-4 py-2 text-gray-600">Cancel</button>
+                <button type="button" onClick={() => { setIsTaskModalOpen(false); setEditingTask(null); setTaskForm({ title: '', description: '', status: 'Backlog', priority: 'medium' }); }} className="px-4 py-2 text-gray-300">Cancel</button>
                 <button type="submit" disabled={savingTask} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
-                  {savingTask ? 'Creating...' : 'Create'}
+                  {savingTask ? (editingTask ? 'Saving...' : 'Creating...') : (editingTask ? 'Save' : 'Create')}
                 </button>
               </div>
             </form>
@@ -597,19 +652,19 @@ export default function ProjectDetailPage() {
       {/* Note Modal */}
       {isNoteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-bold mb-4">{editingNote ? 'Edit Note' : 'Add Note'}</h2>
             <form onSubmit={handleSaveNote}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                <input type="text" value={noteForm.title} onChange={e => setNoteForm({ ...noteForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" required />
+                <input type="text" value={noteForm.title} onChange={e => setNoteForm({ ...noteForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" required />
               </div>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                <textarea value={noteForm.content} onChange={e => setNoteForm({ ...noteForm, content: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" rows={6} />
+                <textarea value={noteForm.content} onChange={e => setNoteForm({ ...noteForm, content: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" rows={6} />
               </div>
               <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => { setIsNoteModalOpen(false); setEditingNote(null); }} className="px-4 py-2 text-gray-600">Cancel</button>
+                <button type="button" onClick={() => { setIsNoteModalOpen(false); setEditingNote(null); }} className="px-4 py-2 text-gray-300">Cancel</button>
                 <button type="submit" disabled={savingNote} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
                   {savingNote ? 'Saving...' : 'Save'}
                 </button>
@@ -622,12 +677,12 @@ export default function ProjectDetailPage() {
       {/* Add Conversation Modal */}
       {isConvModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Add Conversation</h2>
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-gray-100 mb-4">Add Conversation</h2>
             <form onSubmit={handleAddConversation}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select value={convForm.role} onChange={e => setConvForm({ ...convForm, role: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900">
+                <select value={convForm.role} onChange={e => setConvForm({ ...convForm, role: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100">
                   <option value="user">User</option>
                   <option value="assistant">Assistant</option>
                   <option value="system">System</option>
@@ -635,10 +690,10 @@ export default function ProjectDetailPage() {
               </div>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
-                <textarea value={convForm.message_text} onChange={e => setConvForm({ ...convForm, message_text: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-900" rows={4} required placeholder="Enter conversation message..." />
+                <textarea value={convForm.message_text} onChange={e => setConvForm({ ...convForm, message_text: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-gray-100" rows={4} required placeholder="Enter conversation message..." />
               </div>
               <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setIsConvModalOpen(false)} className="px-4 py-2 text-gray-600">Cancel</button>
+                <button type="button" onClick={() => setIsConvModalOpen(false)} className="px-4 py-2 text-gray-300">Cancel</button>
                 <button type="submit" disabled={savingConv} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
                   {savingConv ? 'Adding...' : 'Add'}
                 </button>

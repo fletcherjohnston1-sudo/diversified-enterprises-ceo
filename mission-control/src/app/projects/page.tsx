@@ -75,7 +75,7 @@ export default function ProjectsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Projects</h1>
+        <h1 className="text-2xl font-bold" style={{ color: '#ffffff' }}>Projects</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
@@ -91,7 +91,7 @@ export default function ProjectsPage() {
       )}
 
       {projects.length === 0 ? (
-        <div className="text-gray-500 text-center py-12">
+        <div className="text-gray-400 text-center py-12">
           No projects yet. Create your first project!
         </div>
       ) : (
@@ -100,7 +100,8 @@ export default function ProjectsPage() {
             <Link
               key={project.id}
               href={`/projects/${project.id}`}
-              className="block border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+              className="block border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+              style={{ backgroundColor: '#1f2937', borderColor: '#374151' }}
             >
               <div className="flex items-start gap-3">
                 <div
@@ -108,11 +109,14 @@ export default function ProjectsPage() {
                   style={{ backgroundColor: project.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-gray-900 truncate">{project.name}</h2>
+                  <h2 
+                    className="font-semibold truncate"
+                    style={{ color: '#ffffff' }}
+                  >{project.name}</h2>
                   {project.description && (
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{project.description}</p>
+                    <p className="text-sm text-gray-400 mt-1 line-clamp-2">{project.description}</p>
                   )}
-                  <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                  <div className="flex gap-4 mt-3 text-xs text-gray-400">
                     <span>{project.task_count} tasks</span>
                     <span>{project.conversation_count} conversations</span>
                   </div>
@@ -126,24 +130,25 @@ export default function ProjectsPage() {
       {/* Create Project Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">Create Project</h2>
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold mb-4" style={{ color: '#ffffff' }}>Create Project</h2>
             <form onSubmit={handleCreateProject}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Name *
                 </label>
                 <input
                   type="text"
                   value={newProject.name}
                   onChange={e => setNewProject({ ...newProject, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 bg-gray-700"
                   placeholder="Project name"
+                  style={{ color: '#ffffff', backgroundColor: '#1f2937' }}
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Description
                 </label>
                 <textarea
@@ -155,7 +160,7 @@ export default function ProjectsPage() {
                 />
               </div>
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Color
                 </label>
                 <input
@@ -169,7 +174,7 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-gray-400 hover:text-gray-800"
                 >
                   Cancel
                 </button>

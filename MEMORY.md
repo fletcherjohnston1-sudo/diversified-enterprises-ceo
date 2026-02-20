@@ -59,6 +59,31 @@
 - Status persisted to database on drop ✅
 - Loading skeletons, toast notifications, error handling ✅
 - Mobile-responsive with collapsible sidebar ✅
+- **Fixed:** White-on-white project names (Feb 19, 2026) — switched to inline styles
+
+---
+
+### Look-Through Portfolio Analysis
+**Status:** Deployed ✅
+**Location:** `/home/clawd/.openclaw/workspace/fund_holdings_updater.py`
+**Config:** `/home/clawd/.openclaw/workspace/lookthrough_config.json`
+**Output:** `/home/clawd/.openclaw/shared-data/investment/lookthrough-analysis.json`
+
+**Purpose:** Decomposes ETFs/mutual funds into underlying stock holdings to see true stock-level concentration
+
+**Cron:** Monthly on 1st at 2:00 PM ET (CFO agent runs it)
+
+**Key Metrics:**
+- 10 funds analyzed (VWUAX, VGT, VDADX, VOOV, VSIAX, VMGMX, VSGAX, XSD, SPGP, COPX)
+- ~54.5% of portfolio in funds
+- 16 stocks with cross-fund overlap
+
+**Concentration Warnings (>5% true exposure):**
+- AAPL: 12.3% ($447K) — $231K buried in funds
+- NVDA: 9.1% ($331K)
+- BRK.B: 7.3% ($266K)
+- MSFT: 5.5% ($202K) — $190K via funds
+- AMZN: 5.1% ($186K)
 
 ---
 
@@ -68,15 +93,15 @@
 - **Qwen 3.5 Plus** — $0.40/$2.40 per 1M tokens. 1M context window.
 - Aliases configured: `/model MiniMax`, `/model Qwen`, `/model Sonnet`, etc.
 
-## Executive Team & Topics
-| Agent | Topic | threadId | Workspace | Model |
-|-------|-------|----------|-----------|-------|
-| CEO | CEO Office | 39 | workspace-ceo | Sonnet 4.6 |
-| CTO | CTO | 67 | workspace-cto | MiniMax M2.5 |
-| CRO | Research | 36 | workspace-research | MiniMax M2.5 |
-| COO | Operations | 37 | workspace-coo | MiniMax M2.5 |
-| CFO | Finance | 38 | workspace-cfo | MiniMax M2.5 |
-| Coach | Coach | 746 | workspace-coach | MiniMax M2.5 |
+## Executive Team
+| Agent | Workspace | Model |
+|-------|-----------|-------|
+| @CEO | workspace-ceo | Sonnet 4.6 |
+| @CTO | workspace-cto | MiniMax M2.5 |
+| @CRO | workspace-research | MiniMax M2.5 |
+| @COO | workspace-coo | MiniMax M2.5 |
+| @CFO | workspace-cfo | MiniMax M2.5 |
+| @Coach | workspace-coach | MiniMax M2.5 |
 
 **Telegram group:** `-1003884162218`
 

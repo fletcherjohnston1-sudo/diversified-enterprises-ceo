@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Force white text on project titles */
+#project-title, .project-title {
+  color: #ffffff !important;
+}
+
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
