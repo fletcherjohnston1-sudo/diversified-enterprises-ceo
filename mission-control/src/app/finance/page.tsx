@@ -1,156 +1,163 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 
-interface PortfolioSummary {
+interface Holding {
+  ticker: string;
+  shares: string;
+  avgPrice: string;
+  marketValue: string;
+  value: number;
+  category: 'stock' | 'etf' | 'mutual_fund' | 'option';
+}
+
+interface Account {
+  id: string;
   name: string;
-  allocation: string;
-  invested: string;
-  current: string;
-  returnPct: string;
-  toInvest: string;
-}
-
-interface Total {
-  invested: string;
-  current: string;
-  returnPct: string;
-  toInvest: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  data?: {
-    portfolios: PortfolioSummary[];
-    total: Total;
+  type: string;
+  total: number;
+  holdings: {
+    stocks: Holding[];
+    etfs: Holding[];
+    mutualFunds: Holding[];
+    options: Holding[];
   };
-  error?: string;
 }
 
-function parseMoney(str: string): number {
-  if (!str) return 0;
-  return parseFloat(str.replace(/[$,]/g, '')) || 0;
+function formatMoney(val: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 }
 
-const PORTFOLIO_CONFIG: Record<string, { id: string; color: string; bg: string }> = {
-  'AI Infrastructure': { id: 'ai-infra', color: '#3B82F6', bg: 'bg-blue-900/30' },
-  'Block Chain': { id: 'blockchain', color: '#8B5CF6', bg: 'bg-purple-900/30' },
-  'China': { id: 'china', color: '#EF4444', bg: 'bg-red-900/30' },
-};
+function CategoryBadge({ category }: { category: string }) {
+  const colors: Record<string, string> = {
+    stock: 'bg-blue-900 text-blue-300',
+    etf: 'bg-purple-900 text-purple-300',
+    mutual_fund: 'bg-green-900 text-green-300',
+    option: 'bg-red-900 text-red-300'
+  };
+  const labels: Record<string, string> = {
+    stock: 'Stock',
+    etf: 'ETF',
+    mutual_fund: 'Mutual Fund',
+    option: 'Option'
+  };
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded ${colors[category] || 'bg-gray-700'}`}>
+      {labels[category] || category}
+    </span>
+  );
+}
+
+function HoldingRow({ holding }: { holding: Holding }) {
+  return (
+    <div className="flex justify-between items-center py-2 px-3 hover:bg-gray-700 rounded">
+      <div className="flex items-center gap-3">
+        <span className="font-medium text-white">{holding.ticker}</span>
+        <CategoryBadge category={holding.category} />
+      </div>
+      <div className="text-right">
+        <span className="text-white">{holding.marketValue}</span>
+        <span className="text-gray-500 text-sm ml-2">{holding.shares} shares</span>
+      </div>
+    </div>
+  );
+}
+
+function CategorySection({ title, holdings }: { title: string; holdings: Holding[] }) {
+  if (holdings.length === 0) return null;
+  
+  return (
+    <div className="mb-3">
+      <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">{title} ({holdings.length})</h4>
+      <div className="space-y-0">
+        {holdings.map((h, i) => (
+          <HoldingRow key={i} holding={h} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AccountAccordion({ account }: { account: Account }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="bg-gray-800 rounded-lg mb-3 overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex justify-between items-center p-4 hover:bg-gray-750 transition"
+      >
+        <div className="text-left">
+          <h2 className="text-lg font-semibold text-white">{account.name}</h2>
+          <span className="text-xs text-gray-500">{account.type}</span>
+        </div>
+        <div className="text-right flex items-center gap-3">
+          <p className="text-lg font-semibold text-white">{formatMoney(account.total)}</p>
+          <span className="text-gray-400">{isOpen ? '▲' : '▼'}</span>
+        </div>
+      </button>
+      
+      {isOpen && (
+        <div className="border-t border-gray-700 p-3">
+          <CategorySection title="Stocks" holdings={account.holdings.stocks} />
+          <CategorySection title="ETFs" holdings={account.holdings.etfs} />
+          <CategorySection title="Mutual Funds" holdings={account.holdings.mutualFunds} />
+          <CategorySection title="Options" holdings={account.holdings.options} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function FinancePage() {
-  const [data, setData] = useState<ApiResponse | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [total, setTotal] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/finance/summary')
+    fetch('/api/finance/accounts')
       .then(res => res.json())
       .then(d => {
-        setData(d);
+        if (d.success) {
+          setAccounts(d.data.accounts);
+          setTotal(d.data.total);
+          setLastUpdated(d.data.lastUpdated);
+        }
         setLoading(false);
       })
-      .catch(err => {
-        setData({ success: false, error: err.message });
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   if (loading) {
-    return <div className="p-3 text-gray-400">Loading...</div>;
+    return <div className="p-6 text-gray-400">Loading...</div>;
   }
-
-  if (!data?.success || !data.data) {
-    return <div className="p-6">Error: {data?.error || 'Failed to load'}</div>;
-  }
-
-  const { portfolios, total } = data.data;
-
-  const totalInvested = parseMoney(total.invested);
-  const totalCurrent = parseMoney(total.current);
-  const totalReturn = totalInvested > 0 ? ((totalCurrent - totalInvested) / totalInvested * 100) : 0;
 
   return (
-    <div className="p-3">
-      <h1 className="text-base font-bold mb-2">Portfolio Overview</h1>
-      
-      {/* Portfolio Cards - Compact Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        {portfolios.map((p, i) => {
-          const config = PORTFOLIO_CONFIG[p.name] || { id: '', color: '#6B7280', bg: 'bg-gray-800' };
-          const invested = parseMoney(p.invested);
-          const current = parseMoney(p.current);
-          const ret = invested > 0 ? ((current - invested) / invested * 100) : 0;
-          const isPositive = ret >= 0;
-          
-          return (
-            <Link 
-              key={i} 
-              href={`/finance/${config.id}`}
-              className={`block border border-gray-700 rounded-lg p-3 ${config.bg} hover:border-gray-500 transition group`}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="font-semibold text-sm" style={{ color: config.color }}>{p.name}</h2>
-                <span className={`text-xs font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                  {ret > 0 ? '+' : ''}{ret.toFixed(1)}%
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-gray-500">Invested</p>
-                  <p className="text-gray-200 font-medium">{p.invested}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Current</p>
-                  <p className="text-white font-semibold">{p.current}</p>
-                </div>
-              </div>
-              
-              {/* Mini return bar */}
-              <div className="mt-2 h-1.5 bg-gray-700 rounded overflow-hidden">
-                <div 
-                  className="h-full transition-all"
-                  style={{ 
-                    width: `${Math.min(100, Math.abs(ret))}%`,
-                    backgroundColor: isPositive ? '#10B981' : '#EF4444'
-                  }}
-                />
-              </div>
-            </Link>
-          );
-        })}
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">💰 Portfolio</h1>
+
+      {/* Total */}
+      <div className="bg-gray-800 rounded-lg p-6 mb-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-gray-400 text-sm">Total Value</p>
+            <p className="text-4xl font-bold text-white">{formatMoney(total)}</p>
+          </div>
+          {lastUpdated && (
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Last Updated</p>
+              <p className="text-sm text-gray-400">{lastUpdated}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Total Summary */}
-      <div className="border-t border-gray-700 pt-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-400">Total Portfolio</h2>
-          <span className={`text-sm font-bold ${totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {totalReturn > 0 ? '+' : ''}{totalReturn.toFixed(2)}%
-          </span>
-        </div>
-        
-        <div className="grid grid grid-cols-2 gap-3 gap-3">
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-xs text-gray-500">Invested</p>
-            <p className="text-lg font-semibold">{total.invested}</p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-xs text-gray-500">Current Value</p>
-            <p className="text-lg font-semibold">{total.current}</p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-xs text-gray-500">Return</p>
-            <p className={`text-lg font-semibold ${totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {total.returnPct}
-            </p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-xs text-gray-500">Dry Powder</p>
-            <p className="text-lg font-semibold">{total.toInvest}</p>
-          </div>
-        </div>
+      {/* Accounts */}
+      <div>
+        {accounts.map((acct) => (
+          <AccountAccordion key={acct.id} account={acct} />
+        ))}
       </div>
     </div>
   );

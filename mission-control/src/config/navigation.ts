@@ -8,7 +8,7 @@ export const navigationItems = [
   { id: 'content', label: 'Content', icon: 'FileText', href: '/content', enabled: false },
   { id: 'approvals', label: 'Approvals', icon: 'CheckCircle', href: '/approvals', enabled: false },
   { id: 'council', label: 'Council', icon: 'Users', href: '/council', enabled: false },
-  { id: 'calendar', label: 'Calendar', icon: 'Calendar', href: '/calendar', enabled: true },
+  { id: 'calendar', label: 'Calendar', icon: 'Calendar', href: 'https://calendar.google.com/calendar', enabled: true, external: true },
   { id: 'memory', label: 'Memory', icon: 'Brain', href: '/memory', enabled: false },
   { id: 'docs', label: 'Docs', icon: 'BookOpen', href: '/docs', enabled: false },
   { id: 'people', label: 'People', icon: 'UserCircle', href: '/people', enabled: false },

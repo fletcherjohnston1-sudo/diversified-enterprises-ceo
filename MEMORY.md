@@ -122,3 +122,29 @@
 - Price watch alerts → route through @CRO (not CEO directly)
 - Sync/operational summaries → CEO can summarize only when noteworthy
 - Routine background task completions → NO_REPLY unless actionable
+
+## Topic Bindings (Telegram)
+| Topic | Agent | Notes |
+|-------|-------|-------|
+| 36 | @CRO | Director of Research |
+| 37 | @COO | Chief of Staff |
+| 38 | @CFO | Finance |
+| 39 | @CEO | CEO Office |
+| 67 | @CTO | CTO |
+| 746 | @Coach | Coach |
+| 836 | @Chef | Chef |
+
+## Data Accuracy Rules
+- **Market data:** Always use FRED (fred.stlouisfed.org) as primary source for S&P, Nasdaq, Dow
+- Never rely on intraday futures alone — always show weekly/monthly trend context
+- If uncertain about data quality, say so and flag the uncertainty
+- Cross-check with FRED CSV API: `https://fred.stlouisfed.org/graph/fredgraph.csv?id=SYMBOL`
+
+## Active Skills
+- `skills/market-data/` — FRED-backed market data with trend context
+- `skills/health-tracker/` — Garmin Forerunner 265 integration (building)
+- `skills/investment-radar/` — Portfolio briefing from CFO/CRO data
+
+## Active Cron Jobs
+- Morning Market Brief: 8 AM ET, Mon-Fri (delivers to topic 39)
+- OpenClaw Use Case Research: 3 AM UTC daily (isolated, reports to topic 36)

@@ -1,18 +1,38 @@
 @import "tailwindcss";
 
-/* Force white text on project titles */
-#project-title, .project-title {
-  color: #ffffff !important;
+/* Theme CSS variables */
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1f1f1f;
+  --bg-card: #262626;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #6b7280;
+  --accent-primary: #8B5CF6;
+  --accent-secondary: #7C3AED;
+  --border-color: #2a2a2a;
 }
 
-:root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-card: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+  --border-color: #e5e7eb;
+}
+
+/* Force white text on project titles */
+#project-title, .project-title {
+  color: var(--text-primary) !important;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -22,11 +42,12 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   margin: 0;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Animations */
