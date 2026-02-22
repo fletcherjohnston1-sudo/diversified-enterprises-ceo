@@ -148,3 +148,22 @@
 ## Active Cron Jobs
 - Morning Market Brief: 8 AM ET, Mon-Fri (delivers to topic 39)
 - OpenClaw Use Case Research: 3 AM UTC daily (isolated, reports to topic 36)
+
+---
+
+## 2026-02-21: OpenRouter + Langfuse Integration
+
+Added `user` field to all OpenRouter API calls for Langfuse agent tracking:
+- **File modified:** `/home/clawd/.npm-global/lib/node_modules/openclaw/dist/extensionAPI.js`
+- **New function:** `createUserFieldWrapper` - injects `user: <agentId>` into request body
+- **Scope:** OpenRouter provider only
+- **Backup:** `extensionAPI.js.bak`
+- **Status:** Deployed, awaiting Langfuse verification
+
+## 2026-02-21: Chef Agent Fix
+
+- Chef (topic 836) stopped responding to all messages
+- **Root cause:** Chef missing from `agents.list` config - only binding existed
+- **Fix:** Added all 7 agents to config via `gateway config.patch`
+- **Agents registered:** CEO, CRO, COO, CFO, CTO, Coach, Chef
+- Gateway restarted after patch

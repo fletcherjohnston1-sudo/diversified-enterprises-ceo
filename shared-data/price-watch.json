@@ -32,6 +32,16 @@
         "status": "above_target",
         "rating": "4.8/5 (2608 ratings)",
         "badge": "Amazon's Choice"
+      },
+      {
+        "date": "2026-02-21",
+        "time": "18:03 UTC",
+        "price": 749.00,
+        "list_price": 799.00,
+        "url": "https://www.amazon.com/Apple-2024-Desktop-Computer-10%E2%80%91core/dp/B0DLBX4B1K",
+        "status": "above_target",
+        "rating": "4.8/5 (2612 ratings)",
+        "badge": "Amazon's Choice - Overall Pick"
       }
     ]
   }
