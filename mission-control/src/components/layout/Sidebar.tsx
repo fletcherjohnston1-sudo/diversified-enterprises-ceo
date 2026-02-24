@@ -9,6 +9,15 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Update timestamp every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdated(new Date());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const saved = (localStorage.getItem('theme-mode') || 'dark') as 'dark' | 'light';
@@ -139,6 +148,26 @@ export function Sidebar() {
           >
             ×
           </button>
+        </div>
+
+        {/* Last Updated Timestamp */}
+        <div
+          style={{
+            padding: '8px 20px',
+            borderBottom: `1px solid ${colors.border}`,
+            backgroundColor: colors.background.tertiary,
+          }}
+        >
+          <div style={{
+            fontSize: '11px',
+            color: '#8b5cf6',
+            fontFamily: 'monospace',
+            fontWeight: '600',
+            textAlign: 'center',
+            textShadow: '0 0 8px #8b5cf6',
+          }}>
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
         </div>
 
         {/* Theme Toggle */}

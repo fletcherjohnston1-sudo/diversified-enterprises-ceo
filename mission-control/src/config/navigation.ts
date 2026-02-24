@@ -11,7 +11,7 @@ export const navigationItems = [
   { id: 'calendar', label: 'Calendar', icon: 'Calendar', href: 'https://calendar.google.com/calendar', enabled: true, external: true },
   { id: 'cron', label: 'Cron Jobs', icon: 'Clock', href: '/cron', enabled: true },
   { id: 'memory', label: 'Memory', icon: 'Brain', href: '/memory', enabled: false },
-  { id: 'docs', label: 'Docs', icon: 'BookOpen', href: '/docs', enabled: false },
+  { id: 'docs', label: 'Docs', icon: 'BookOpen', href: '/docs', enabled: true },
   { id: 'people', label: 'People', icon: 'UserCircle', href: '/people', enabled: false },
   { id: 'office', label: 'Office', icon: 'Briefcase', href: '/office', enabled: false },
   { id: 'team', label: 'Team', icon: 'Users2', href: '/team', enabled: false },

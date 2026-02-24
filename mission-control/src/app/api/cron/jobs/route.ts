@@ -5,6 +5,21 @@ interface CronJobState {
   nextRunAtMs: number;
   lastRunAtMs: number;
   lastStatus: string;
+  lastDurationMs?: number;
+  consecutiveErrors?: number;
+}
+
+interface CronJobPayload {
+  kind: string;
+  message?: string;
+  model?: string;
+  timeoutSeconds?: number;
+}
+
+interface CronJobDelivery {
+  mode: string;
+  channel?: string;
+  to?: string;
 }
 
 interface CronJob {
@@ -13,14 +28,33 @@ interface CronJob {
   agentId: string;
   agentName: string;
   enabled: boolean;
+  createdAtMs: number;
+  updatedAtMs: number;
   schedule: {
     kind: string;
     expr?: string;
     tz?: string;
   };
+  sessionTarget: string;
+  wakeMode: string;
+  payload: CronJobPayload;
+  delivery: CronJobDelivery;
   nextRunAtMs: number;
   lastRunAtMs: number;
   lastStatus: string;
+  lastDurationMs?: number;
+  consecutiveErrors?: number;
+}
+
+interface CronRun {
+  ts: number;
+  jobId: string;
+  action: string;
+  status: string;
+  summary?: string;
+  runAtMs: number;
+  durationMs: number;
+  nextRunAtMs: number;
 }
 
 function formatAgentName(agentId: string): string {
@@ -49,14 +83,31 @@ function parseCronJson(output: string): CronJob[] {
         agentId: job.agentId,
         agentName: formatAgentName(job.agentId),
         enabled: job.enabled ?? true,
+        createdAtMs: job.createdAtMs || 0,
+        updatedAtMs: job.updatedAtMs || 0,
         schedule: {
           kind: job.schedule?.kind || 'unknown',
           expr: job.schedule?.expr,
           tz: job.schedule?.tz,
         },
+        sessionTarget: job.sessionTarget || 'isolated',
+        wakeMode: job.wakeMode || 'now',
+        payload: {
+          kind: job.payload?.kind || 'unknown',
+          message: job.payload?.message,
+          model: job.payload?.model,
+          timeoutSeconds: job.payload?.timeoutSeconds,
+        },
+        delivery: {
+          mode: job.delivery?.mode || 'none',
+          channel: job.delivery?.channel,
+          to: job.delivery?.to,
+        },
         nextRunAtMs: state.nextRunAtMs || 0,
         lastRunAtMs: state.lastRunAtMs || 0,
         lastStatus: state.lastStatus || 'idle',
+        lastDurationMs: state.lastDurationMs,
+        consecutiveErrors: state.consecutiveErrors,
       });
     }
     

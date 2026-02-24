@@ -132,6 +132,14 @@ export function KanbanBoard() {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Update timestamp when tasks change
+  useEffect(() => {
+    if (!tasksLoading && tasks.length >= 0) {
+      setLastUpdated(new Date());
+    }
+  }, [tasksLoading, tasks]);
 
   // Configure sensors for drag detection
   const sensors = useSensors(
@@ -341,7 +349,8 @@ export function KanbanBoard() {
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.3s ease' }}>
         {/* Header with New Task button */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div></div>
           <Button variant="primary" onClick={handleNewTask}>
             + New Task
           </Button>

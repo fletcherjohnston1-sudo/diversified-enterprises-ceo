@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ProjectKanbanBoard } from '@/components/projects/ProjectKanbanBoard';
 
 interface Project {
   id: number;
@@ -13,11 +14,14 @@ interface Project {
   conversation_count: number;
 }
 
+type ViewMode = 'grid' | 'kanban';
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [newProject, setNewProject] = useState({ name: '', description: '', color: '#3B82F6' });
   const [creating, setCreating] = useState(false);
 
@@ -68,6 +72,9 @@ export default function ProjectsPage() {
     }
   };
 
+  // Filter out projects with no tasks when in kanban view (unless we want empty columns)
+  const projectsWithTasks = projects;
+
   if (loading) {
     return <div className="p-6">Loading projects...</div>;
   }
@@ -76,12 +83,55 @@ export default function ProjectsPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold" style={{ color: '#ffffff' }}>Projects</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-        >
-          + Create Project
-        </button>
+        <div className="flex gap-3">
+          {/* View Toggle */}
+          <div style={{
+            display: 'flex',
+            backgroundColor: '#1f2937',
+            borderRadius: '6px',
+            padding: '2px',
+            border: '1px solid #374151',
+          }}>
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: viewMode === 'grid' ? '#3b82f6' : 'transparent',
+                color: viewMode === 'grid' ? '#ffffff' : '#9ca3af',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: 'all 150ms ease',
+              }}
+            >
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: viewMode === 'kanban' ? '#3b82f6' : 'transparent',
+                color: viewMode === 'kanban' ? '#ffffff' : '#9ca3af',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: 'all 150ms ease',
+              }}
+            >
+              Kanban
+            </button>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+          >
+            + Create Project
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -94,7 +144,11 @@ export default function ProjectsPage() {
         <div className="text-gray-400 text-center py-12">
           No projects yet. Create your first project!
         </div>
+      ) : viewMode === 'kanban' ? (
+        // Kanban View
+        <ProjectKanbanBoard projects={projects} />
       ) : (
+        // Grid View
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map(project => (
             <Link

@@ -12,7 +12,15 @@ type Report = {
   created_at: string;
 };
 
-type TabId = 'summary' | 'themes' | 'portfolio' | 'recommendations';
+type TabId = 'summary' | 'themes' | 'portfolio' | 'recommendations' | 'raw';
+
+function detectReportType(data: any): 'investment' | 'generic' {
+  // Check if it's an investment report (has portfolio or themes data)
+  if (data.portfolio || data.themes || data.recommendations) {
+    return 'investment';
+  }
+  return 'generic';
+}
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -20,6 +28,7 @@ export default function ReportDetailPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('summary');
   const [loading, setLoading] = useState(true);
+  const [reportType, setReportType] = useState<'investment' | 'generic'>('investment');
 
   const reportId = params.id;
 
@@ -29,18 +38,26 @@ export default function ReportDetailPage() {
       .then(data => {
         if (data.report) {
           setReport(data.report);
+          const dataContent = data.report.data_json ? JSON.parse(data.report.data_json) : {};
+          setReportType(detectReportType(dataContent));
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [reportId]);
 
-  const tabs: { id: TabId; label: string }[] = [
+  const investmentTabs: { id: TabId; label: string }[] = [
     { id: 'summary', label: 'Executive Summary' },
     { id: 'themes', label: 'Theme Analysis' },
     { id: 'portfolio', label: 'Portfolio Breakdown' },
     { id: 'recommendations', label: 'Recommendations' },
   ];
+
+  const genericTabs: { id: TabId; label: string }[] = [
+    { id: 'raw', label: 'Report Content' },
+  ];
+
+  const tabs = reportType === 'investment' ? investmentTabs : genericTabs;
 
   if (loading) {
     return <div style={{ padding: '24px', color: theme.colors.text.secondary }}>Loading...</div>;
@@ -58,6 +75,10 @@ export default function ReportDetailPage() {
 
   // Render content based on active tab
   const renderContent = () => {
+    if (reportType === 'generic' || activeTab === 'raw') {
+      return <RawReportView data={data} />;
+    }
+    
     switch (activeTab) {
       case 'summary':
         return <ExecutiveSummary data={data} />;
@@ -127,6 +148,7 @@ export default function ReportDetailPage() {
         gap: '4px', 
         borderBottom: `1px solid ${theme.colors.border}`,
         marginBottom: '24px',
+        overflowX: 'auto',
       }}>
         {tabs.map(tab => (
           <button
@@ -141,6 +163,7 @@ export default function ReportDetailPage() {
               cursor: 'pointer',
               fontSize: '14px',
               fontWeight: activeTab === tab.id ? '600' : '400',
+              whiteSpace: 'nowrap',
               transition: 'all 150ms ease',
             }}
           >
@@ -174,15 +197,125 @@ export default function ReportDetailPage() {
   );
 }
 
-// Tab Components
+// Generic Raw Report View - visually appealing
+function RawReportView({ data }: { data: any }) {
+  const [viewMode, setViewMode] = useState<'pretty' | 'json'>('pretty');
+
+  // Try to render as pretty markdown-like content
+  const renderPretty = () => {
+    // If it's a string, render as-is
+    if (typeof data === 'string') {
+      return <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{data}</pre>;
+    }
+
+    // If it has raw_content, render that
+    if (data.raw_content) {
+      return <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{data.raw_content}</pre>;
+    }
+
+    // Otherwise render the JSON in a pretty way
+    const jsonStr = JSON.stringify(data, null, 2);
+    
+    // Try to detect and format sections
+    const lines = jsonStr.split('\n');
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {Object.entries(data).map(([key, value]) => (
+          <div key={key}>
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: 600, 
+              color: theme.colors.accent.primary,
+              marginBottom: '8px',
+              textTransform: 'capitalize',
+            }}>
+              {key.replace(/_/g, ' ')}
+            </div>
+            <div style={{ 
+              backgroundColor: theme.colors.background.secondary,
+              padding: '16px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: theme.colors.text.primary,
+              whiteSpace: 'pre-wrap',
+              maxHeight: '400px',
+              overflow: 'auto',
+            }}>
+              {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {/* View Mode Toggle */}
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '8px' }}>
+        <button
+          onClick={() => setViewMode('pretty')}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: viewMode === 'pretty' ? theme.colors.accent.primary : theme.colors.background.tertiary,
+            color: viewMode === 'pretty' ? '#fff' : theme.colors.text.secondary,
+            cursor: 'pointer',
+            fontSize: '13px',
+          }}
+        >
+          📄 Formatted
+        </button>
+        <button
+          onClick={() => setViewMode('json')}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: viewMode === 'json' ? theme.colors.accent.primary : theme.colors.background.tertiary,
+            color: viewMode === 'json' ? '#fff' : theme.colors.text.secondary,
+            cursor: 'pointer',
+            fontSize: '13px',
+          }}
+        >
+          {'{}'} JSON
+        </button>
+      </div>
+
+      {/* Content */}
+      <div style={{ 
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: '12px',
+        padding: '24px',
+        border: `1px solid ${theme.colors.border}`,
+      }}>
+        {viewMode === 'pretty' ? renderPretty() : (
+          <pre style={{ 
+            margin: 0, 
+            fontSize: '12px', 
+            fontFamily: 'monospace',
+            color: theme.colors.text.primary,
+            overflow: 'auto',
+          }}>
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Tab Components (existing)
 function ExecutiveSummary({ data }: { data: any }) {
   const portfolio = data.portfolio || {};
   const themes = data.themes || {};
   
-  const totalValue = portfolio.total_portfolio?.total_market_value || 0;
-  const holdings = portfolio.total_portfolio?.total_holdings || 0;
-  const themeCount = themes.summary?.total_themes || 0;
-  const topTheme = themes.summary?.top_theme || 'N/A';
+  // Handle both old format (total_portfolio) and new format (top-level)
+  const totalValue = portfolio.total_portfolio?.total_market_value || portfolio.total_value || 0;
+  const holdings = portfolio.total_portfolio?.total_holdings || portfolio.num_holdings || 0;
+  const themeCount = themes.summary?.total_themes || (Array.isArray(themes) ? themes.length : 0);
+  const topTheme = themes.summary?.top_theme || (Array.isArray(themes) && themes[0]?.name) || 'N/A';
 
   return (
     <div className="report-content" style={{ color: theme.colors.text.primary }}>
@@ -212,17 +345,18 @@ function ExecutiveSummary({ data }: { data: any }) {
 }
 
 function ThemeAnalysis({ data }: { data: any }) {
-  const themes = data.themes?.themes || [];
+  // Handle both formats: data.themes.themes (old) or data.themes (array directly)
+  const themesArray = data.themes?.themes || data.themes || [];
   
   return (
     <div className="report-content" style={{ color: theme.colors.text.primary }}>
       <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>Theme Analysis</h2>
       
-      {themes.length === 0 ? (
+      {themesArray.length === 0 ? (
         <div style={{ color: theme.colors.text.secondary }}>No theme data available</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {themes.map((themeItem: any, idx: number) => (
+          {themesArray.map((themeItem: any, idx: number) => (
             <div key={idx} style={{ 
               backgroundColor: theme.colors.background.secondary, 
               padding: '16px 20px', 
@@ -259,26 +393,64 @@ function PortfolioBreakdown({ data }: { data: any }) {
   const portfolio = data.portfolio || {};
   const byAccount = portfolio.by_account || {};
   const byTheme = portfolio.by_theme || {};
+  const topHoldings = portfolio.top_5_holdings || [];
   
   return (
     <div className="report-content" style={{ color: theme.colors.text.primary }}>
       <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>Portfolio Breakdown</h2>
       
-      <h3 style={{ fontSize: '14px', fontWeight: '600', color: theme.colors.text.secondary, marginBottom: '12px' }}>BY ACCOUNT</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
-        {Object.entries(byAccount).map(([name, info]: [string, any]) => (
-          <div key={name} style={{ backgroundColor: theme.colors.background.secondary, padding: '16px', borderRadius: '8px' }}>
-            <div style={{ fontSize: '14px', fontWeight: '600' }}>{name}</div>
-            <div style={{ fontSize: '12px', color: theme.colors.text.secondary }}>{info.type}</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', marginTop: '4px' }}>
-              ${(info.market_value || 0).toLocaleString()}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.colors.text.tertiary }}>
-              {info.holdings_count} holdings
-            </div>
+      {/* By Account */}
+      {Object.keys(byAccount).length > 0 && (
+        <>
+          <h3 style={{ fontSize: '14px', fontWeight: '600', color: theme.colors.text.secondary, marginBottom: '12px' }}>BY ACCOUNT</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
+            {Object.entries(byAccount).map(([name, info]: [string, any]) => (
+              <div key={name} style={{ backgroundColor: theme.colors.background.secondary, padding: '16px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600' }}>{name}</div>
+                <div style={{ fontSize: '12px', color: theme.colors.text.secondary }}>{info.type}</div>
+                <div style={{ fontSize: '18px', fontWeight: '700', marginTop: '4px' }}>
+                  ${(info.market_value || 0).toLocaleString()}
+                </div>
+                <div style={{ fontSize: '12px', color: theme.colors.text.tertiary }}>
+                  {info.holdings_count} holdings
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
+
+      {/* By Theme */}
+      {Object.keys(byTheme).length > 0 && (
+        <>
+          <h3 style={{ fontSize: '14px', fontWeight: '600', color: theme.colors.text.secondary, marginBottom: '12px' }}>BY THEME</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
+            {Object.entries(byTheme).map(([name, value]: [string, any]) => (
+              <div key={name} style={{ backgroundColor: theme.colors.background.secondary, padding: '16px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600' }}>{name.replace(/_/g, ' ')}</div>
+                <div style={{ fontSize: '18px', fontWeight: '700', marginTop: '4px' }}>
+                  ${(value || 0).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Top 5 Holdings */}
+      {topHoldings.length > 0 && (
+        <>
+          <h3 style={{ fontSize: '14px', fontWeight: '600', color: theme.colors.text.secondary, marginBottom: '12px' }}>TOP HOLDINGS</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '8px', marginBottom: '24px' }}>
+            {topHoldings.map((h: any, idx: number) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: theme.colors.background.secondary, padding: '12px 16px', borderRadius: '8px' }}>
+                <span style={{ fontWeight: 600 }}>{h.symbol}</span>
+                <span>${(h.value || 0).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -5,9 +5,18 @@ import { theme } from '@/config/theme';
 interface PageHeaderProps {
   title: string;
   actions?: React.ReactNode;
+  showTimestamp?: boolean;
 }
 
-export function PageHeader({ title, actions }: PageHeaderProps) {
+export function PageHeader({ title, actions, showTimestamp = true }: PageHeaderProps) {
+  const timestamp = new Date().toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
   return (
     <div
       style={{
@@ -17,6 +26,9 @@ export function PageHeader({ title, actions }: PageHeaderProps) {
         marginBottom: '24px',
         paddingBottom: '16px',
         borderBottom: `1px solid ${theme.colors.border}`,
+        backgroundColor: '#FF69B4',
+        padding: '16px',
+        borderRadius: '8px',
       }}
     >
       <h1
@@ -29,11 +41,23 @@ export function PageHeader({ title, actions }: PageHeaderProps) {
       >
         {title}
       </h1>
-      {actions && (
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {actions}
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {showTimestamp && (
+          <span
+            style={{
+              fontSize: '12px',
+              color: theme.colors.text.secondary,
+            }}
+          >
+            Updated: {timestamp}
+          </span>
+        )}
+        {actions && (
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {actions}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
