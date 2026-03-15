@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { database } from '@/lib/db';
+import { VALID_OWNER_AGENTS, type OwnerAgent } from '@/types/agents';
 
 export async function GET(
   request: NextRequest,
@@ -67,6 +68,14 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // Validate owner_agent if present in the payload
+    if (body.owner_agent !== undefined) {
+      const resolvedAgent: OwnerAgent =
+        VALID_OWNER_AGENTS.includes(body.owner_agent) ? body.owner_agent : 'unassigned';
+      body.owner_agent = resolvedAgent;
+    }
+
     const updatedProject = database.projects.update(projectId, body);
 
     return NextResponse.json({ success: true, data: updatedProject });
