@@ -1,5 +1,6 @@
 export const navigationItems = [
   { id: 'projects', label: 'Projects', icon: 'Folder', href: '/projects', enabled: true },
+  { id: 'agents', label: 'Agents', icon: 'Bot', href: '/agents', enabled: true },
   { id: 'tasks', label: 'Tasks', icon: 'CheckSquare', href: '/tasks', enabled: true },
   { id: 'reports', label: 'Reports', icon: 'BarChart2', href: '/reports', enabled: true },
   { id: 'health', label: 'Health', icon: 'Heart', href: '/health', enabled: true },
