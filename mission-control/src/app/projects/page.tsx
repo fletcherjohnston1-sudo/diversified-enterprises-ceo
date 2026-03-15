@@ -3,18 +3,75 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ProjectKanbanBoard } from '@/components/projects/ProjectKanbanBoard';
+import { VALID_OWNER_AGENTS, type OwnerAgent } from '@/types/agents';
 
 interface Project {
   id: number;
   name: string;
   color: string;
   description: string | null;
+  owner_agent: OwnerAgent;
   created_at: string;
   task_count: number;
   conversation_count: number;
 }
 
 type ViewMode = 'grid' | 'kanban';
+
+// ── owner agent display config ─────────────────────────────────────────────
+
+const OWNER_AGENT_LABEL: Record<OwnerAgent, string> = {
+  main:       'Main',
+  cfo:        'CFO',
+  cro:        'CRO',
+  cto:        'CTO',
+  schwab:     'Schwab',
+  unassigned: 'Unassigned',
+};
+
+const OWNER_AGENT_COLOR: Record<OwnerAgent, string> = {
+  main:       '#8b5cf6', // purple  — hub
+  cfo:        '#22c55e', // green   — finance
+  cro:        '#3b82f6', // blue    — revenue
+  cto:        '#06b6d4', // cyan    — tech
+  schwab:     '#10b981', // emerald — finance/portfolio
+  unassigned: '#6b7280', // gray
+};
+
+function resolveOwnerAgent(value: unknown): OwnerAgent {
+  if (typeof value === 'string' && VALID_OWNER_AGENTS.includes(value as OwnerAgent)) {
+    return value as OwnerAgent;
+  }
+  return 'unassigned';
+}
+
+function OwnerAgentBadge({ value }: { value: unknown }) {
+  const agent = resolveOwnerAgent(value);
+  const color = OWNER_AGENT_COLOR[agent];
+  const label = OWNER_AGENT_LABEL[agent];
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '2px 8px',
+        borderRadius: '999px',
+        fontSize: '11px',
+        fontWeight: 600,
+        letterSpacing: '0.03em',
+        backgroundColor: `${color}20`,
+        color,
+        border: `1px solid ${color}40`,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+// ── page ──────────────────────────────────────────────────────────────────
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -54,7 +111,7 @@ export default function ProjectsPage() {
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProject)
+        body: JSON.stringify(newProject),
       });
 
       const data = await response.json();
@@ -71,9 +128,6 @@ export default function ProjectsPage() {
       setCreating(false);
     }
   };
-
-  // Filter out projects with no tasks when in kanban view (unless we want empty columns)
-  const projectsWithTasks = projects;
 
   if (loading) {
     return <div className="p-6">Loading projects...</div>;
@@ -145,7 +199,7 @@ export default function ProjectsPage() {
           No projects yet. Create your first project!
         </div>
       ) : viewMode === 'kanban' ? (
-        // Kanban View
+        // Kanban View — unchanged
         <ProjectKanbanBoard projects={projects} />
       ) : (
         // Grid View
@@ -163,10 +217,17 @@ export default function ProjectsPage() {
                   style={{ backgroundColor: project.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <h2 
-                    className="font-semibold truncate"
-                    style={{ color: '#ffffff' }}
-                  >{project.name}</h2>
+                  {/* Name + owner badge on the same row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h2
+                      className="font-semibold truncate"
+                      style={{ color: '#ffffff', margin: 0 }}
+                    >
+                      {project.name}
+                    </h2>
+                    <OwnerAgentBadge value={project.owner_agent} />
+                  </div>
+
                   {project.description && (
                     <p className="text-sm text-gray-400 mt-1 line-clamp-2">{project.description}</p>
                   )}
