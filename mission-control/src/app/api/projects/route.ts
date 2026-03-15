@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { database } from '@/lib/db';
+import { VALID_OWNER_AGENTS, type OwnerAgent } from '@/types/agents';
 
 export async function GET() {
   try {
@@ -23,7 +24,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description, color } = body;
+    const { name, description, color, owner_agent } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -32,10 +33,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate owner_agent if provided
+    const resolvedAgent: OwnerAgent =
+      owner_agent && VALID_OWNER_AGENTS.includes(owner_agent)
+        ? owner_agent
+        : 'unassigned';
+
     const project = database.projects.create({
       name,
       description,
-      color
+      color,
+      owner_agent: resolvedAgent,
     });
 
     return NextResponse.json({ success: true, data: project });
