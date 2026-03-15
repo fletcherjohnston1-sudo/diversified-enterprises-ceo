@@ -153,12 +153,14 @@ export const database = {
 
     create: (data: any) => {
       const stmt = db.prepare(`
-        INSERT INTO projects (name, color)
-        VALUES (?, ?)
+        INSERT INTO projects (name, color, description, owner_agent)
+        VALUES (?, ?, ?, ?)
       `);
       const result = stmt.run(
         data.name,
-        data.color || '#3B82F6'
+        data.color || '#3B82F6',
+        data.description || null,
+        data.owner_agent || 'unassigned'
       );
       return database.projects.findById(result.lastInsertRowid as number);
     },
@@ -178,6 +180,12 @@ export const database = {
       if (data.description !== undefined) {
         fields.push('description = ?');
         params.push(data.description);
+      }
+      if (data.owner_agent !== undefined) {
+        const VALID_AGENTS = ['main', 'cfo', 'cro', 'cto', 'schwab', 'unassigned'];
+        const agent = VALID_AGENTS.includes(data.owner_agent) ? data.owner_agent : 'unassigned';
+        fields.push('owner_agent = ?');
+        params.push(agent);
       }
 
       if (fields.length === 0) {
